@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package router;
+
+option go_package = "github.com/yourusername/im-system/api/proto/router;routerpb";
+
+service RouterService {
+  rpc RegisterRoute(RegisterRouteRequest) returns (RegisterRouteResponse);
+  rpc KeepAlive(KeepAliveRequest) returns (KeepAliveResponse);
+  rpc GetRoute(GetRouteRequest) returns (GetRouteResponse);
+  rpc UnregisterRoute(UnregisterRouteRequest) returns (UnregisterRouteResponse);
+  rpc GetOnlineStatus(GetOnlineStatusRequest) returns (GetOnlineStatusResponse);
+}
+
+message RegisterRouteRequest {
+  int64 user_id = 1;
+  string device_id = 2;
+  string gateway_addr = 3;
+}
+
+message RegisterRouteResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message KeepAliveRequest {
+  int64 user_id = 1;
+  string device_id = 2;
+}
+
+message KeepAliveResponse {
+  bool success = 1;
+}
+
+message GetRouteRequest {
+  int64 user_id = 1;
+}
+
+message GetRouteResponse {
+  repeated DeviceRoute routes = 1;
+}
+
+message DeviceRoute {
+  string device_id = 1;
+  string gateway_addr = 2;
+  int64 last_active = 3;
+}
+
+message UnregisterRouteRequest {
+  int64 user_id = 1;
+  string device_id = 2;
+}
+
+message UnregisterRouteResponse {
+  bool success = 1;
+}
+
+message GetOnlineStatusRequest {
+  int64 user_id = 1;
+}
+
+message GetOnlineStatusResponse {
+  bool online = 1;
+  repeated string device_ids = 2;
+}

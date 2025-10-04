@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package common;
+
+option go_package = "github.com/yourusername/im-system/api/proto/common;commonpb";
+
+// 通用响应
+message Response {
+  int32 code = 1;
+  string message = 2;
+  bool success = 3;
+}
+
+// 分页请求
+message PaginationRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+// 分页响应
+message PaginationResponse {
+  int32 total = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int32 total_pages = 4;
+}
+
+// 错误信息
+message Error {
+  int32 code = 1;
+  string message = 2;
+  string detail = 3;
+}

@@ -1,0 +1,231 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: im-postgres
+    environment:
+      POSTGRES_USER: imuser
+      POSTGRES_PASSWORD: impassword
+      POSTGRES_DB: im_system
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../../migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U imuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - im-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: im-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - im-network
+
+  # Consul Service Discovery
+  consul:
+    image: consul:1.17
+    container_name: im-consul
+    ports:
+      - "8500:8500"
+      - "8600:8600/udp"
+    command: agent -server -ui -bootstrap-expect=1 -client=0.0.0.0
+    volumes:
+      - consul_data:/consul/data
+    healthcheck:
+      test: ["CMD", "consul", "members"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - im-network
+
+  # MinIO S3-compatible storage
+  minio:
+    image: minio/minio:latest
+    container_name: im-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - im-network
+
+  # User Service
+  user-service:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile.user
+    container_name: im-user-service
+    ports:
+      - "50054:50054"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: imuser
+      POSTGRES_PASSWORD: impassword
+      POSTGRES_DB: im_system
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CONSUL_ADDRESS: consul:8500
+      USER_GRPC_PORT: 50054
+      JWT_SECRET: your-secret-key-change-in-production
+      LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      consul:
+        condition: service_healthy
+    networks:
+      - im-network
+    restart: unless-stopped
+
+  # Router Service
+  router-service:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile.router
+    container_name: im-router-service
+    ports:
+      - "50052:50052"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CONSUL_ADDRESS: consul:8500
+      ROUTER_GRPC_PORT: 50052
+      LOG_LEVEL: info
+    depends_on:
+      redis:
+        condition: service_healthy
+      consul:
+        condition: service_healthy
+    networks:
+      - im-network
+    restart: unless-stopped
+    deploy:
+      replicas: 2
+
+  # Message Service
+  message-service:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile.message
+    container_name: im-message-service
+    ports:
+      - "50053:50053"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: imuser
+      POSTGRES_PASSWORD: impassword
+      POSTGRES_DB: im_system
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CONSUL_ADDRESS: consul:8500
+      MESSAGE_GRPC_PORT: 50053
+      LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      consul:
+        condition: service_healthy
+    networks:
+      - im-network
+    restart: unless-stopped
+    deploy:
+      replicas: 2
+
+  # Gateway Service
+  gateway-service:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile.gateway
+    container_name: im-gateway-service
+    ports:
+      - "50051:50051"
+    environment:
+      CONSUL_ADDRESS: consul:8500
+      GATEWAY_GRPC_PORT: 50051
+      LOG_LEVEL: info
+    depends_on:
+      consul:
+        condition: service_healthy
+    networks:
+      - im-network
+    restart: unless-stopped
+    deploy:
+      replicas: 3
+
+  # File Service
+  file-service:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile.file
+    container_name: im-file-service
+    ports:
+      - "8080:8080"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: imuser
+      POSTGRES_PASSWORD: impassword
+      POSTGRES_DB: im_system
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: im-files
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_USE_SSL: false
+      CONSUL_ADDRESS: consul:8500
+      FILE_HTTP_PORT: 8080
+      LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      consul:
+        condition: service_healthy
+    networks:
+      - im-network
+    restart: unless-stopped
+
+networks:
+  im-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  consul_data:
+  minio_data:

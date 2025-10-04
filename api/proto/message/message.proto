@@ -1,0 +1,129 @@
+syntax = "proto3";
+
+package message;
+
+option go_package = "github.com/yourusername/im-system/api/proto/message;messagepb";
+
+import "google/protobuf/struct.proto";
+
+service MessageService {
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
+  rpc PullMessages(PullMessagesRequest) returns (PullMessagesResponse);
+  rpc GetConversation(GetConversationRequest) returns (GetConversationResponse);
+  rpc CreateConversation(CreateConversationRequest) returns (CreateConversationResponse);
+  rpc UpdateReadSeq(UpdateReadSeqRequest) returns (UpdateReadSeqResponse);
+  rpc NotifyNewMessage(NotifyNewMessageRequest) returns (NotifyNewMessageResponse);
+}
+
+enum ConversationType {
+  DIRECT = 0;
+  GROUP = 1;
+  CHANNEL = 2;
+}
+
+enum ConversationRole {
+  OWNER = 0;
+  ADMIN = 1;
+  PUBLISHER = 2;
+  MEMBER = 3;
+  VIEWER = 4;
+}
+
+message SendMessageRequest {
+  int64 conv_id = 1;
+  int64 sender_id = 2;
+  ConversationType conv_type = 3;
+  google.protobuf.Struct body = 4;
+  optional string reply_to = 5;
+  repeated int64 mentions = 6;
+}
+
+message SendMessageResponse {
+  string msg_id = 1;
+  int64 seq = 2;
+  int64 created_at = 3;
+}
+
+message PullMessagesRequest {
+  int64 conv_id = 1;
+  int64 since_seq = 2;
+  int32 limit = 3;
+}
+
+message PullMessagesResponse {
+  repeated Message messages = 1;
+  bool has_more = 2;
+}
+
+message Message {
+  string msg_id = 1;
+  int64 conv_id = 2;
+  int64 seq = 3;
+  int64 sender_id = 4;
+  ConversationType conv_type = 5;
+  google.protobuf.Struct body = 6;
+  optional string reply_to = 7;
+  repeated int64 mentions = 8;
+  string visibility = 9;
+  int64 created_at = 10;
+}
+
+message GetConversationRequest {
+  int64 conv_id = 1;
+}
+
+message GetConversationResponse {
+  Conversation conversation = 1;
+}
+
+message Conversation {
+  int64 id = 1;
+  ConversationType type = 2;
+  string title = 3;
+  int64 owner_id = 4;
+  int64 created_at = 5;
+  repeated ConversationMember members = 6;
+}
+
+message ConversationMember {
+  int64 user_id = 1;
+  ConversationRole role = 2;
+  bool muted = 3;
+  int64 last_read_seq = 4;
+  int64 joined_at = 5;
+}
+
+message CreateConversationRequest {
+  ConversationType type = 1;
+  string title = 2;
+  int64 owner_id = 3;
+  repeated int64 member_ids = 4;
+}
+
+message CreateConversationResponse {
+  int64 conv_id = 1;
+  string message = 2;
+}
+
+message UpdateReadSeqRequest {
+  int64 conv_id = 1;
+  int64 user_id = 2;
+  int64 seq = 3;
+}
+
+message UpdateReadSeqResponse {
+  bool success = 1;
+}
+
+message NotifyNewMessageRequest {
+  int64 conv_id = 1;
+  string msg_id = 2;
+  int64 seq = 3;
+  int64 sender_id = 4;
+  repeated int64 recipient_ids = 5;
+}
+
+message NotifyNewMessageResponse {
+  bool success = 1;
+  int32 notified_count = 2;
+}

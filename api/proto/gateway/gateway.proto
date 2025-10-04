@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package gateway;
+
+option go_package = "github.com/yourusername/im-system/api/proto/gateway;gatewaypb";
+
+import "google/protobuf/struct.proto";
+
+service GatewayService {
+  rpc Connect(stream GatewayMessage) returns (stream GatewayMessage);
+  rpc Send(SendRequest) returns (SendResponse);
+  rpc Sync(SyncRequest) returns (SyncResponse);
+}
+
+enum MessageType {
+  PING = 0;
+  PONG = 1;
+  AUTH = 2;
+  CHAT = 3;
+  NOTIFICATION = 4;
+  ACK = 5;
+  ERROR = 6;
+  TYPING = 7;
+  READ_RECEIPT = 8;
+  PRESENCE = 9;
+}
+
+message GatewayMessage {
+  MessageType type = 1;
+  google.protobuf.Struct payload = 2;
+  int64 timestamp = 3;
+  optional string msg_id = 4;
+  optional int32 error_code = 5;
+  optional string error_msg = 6;
+}
+
+message SendRequest {
+  int64 conv_id = 1;
+  string conv_type = 2;
+  google.protobuf.Struct body = 3;
+  optional string reply_to = 4;
+  repeated int64 mentions = 5;
+}
+
+message SendResponse {
+  string msg_id = 1;
+  int64 seq = 2;
+  int64 created_at = 3;
+}
+
+message SyncRequest {
+  repeated ConvSync conversations = 1;
+}
+
+message ConvSync {
+  int64 conv_id = 1;
+  int64 since_seq = 2;
+}
+
+message SyncResponse {
+  repeated ConvMessages conv_messages = 1;
+}
+
+message ConvMessages {
+  int64 conv_id = 1;
+  repeated ChatMessage messages = 2;
+  bool has_more = 3;
+}
+
+message ChatMessage {
+  string msg_id = 1;
+  int64 conv_id = 2;
+  int64 seq = 3;
+  int64 sender_id = 4;
+  string conv_type = 5;
+  google.protobuf.Struct body = 6;
+  optional string reply_to = 7;
+  repeated int64 mentions = 8;
+  int64 created_at = 9;
+}
