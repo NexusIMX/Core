@@ -2,64 +2,97 @@ syntax = "proto3";
 
 package router;
 
-option go_package = "github.com/yourusername/im-system/api/proto/router;routerpb";
+option go_package = "github.com/dollarkillerx/im-system/api/proto/router;routerpb";
 
+// RouterService 路由服务
+// Router service for managing user connections and online status
 service RouterService {
+  // RegisterRoute 注册路由 (用户连接到Gateway时调用) / Register route (called when user connects to Gateway)
   rpc RegisterRoute(RegisterRouteRequest) returns (RegisterRouteResponse);
+
+  // KeepAlive 保持连接活跃 / Keep connection alive
   rpc KeepAlive(KeepAliveRequest) returns (KeepAliveResponse);
+
+  // GetRoute 获取用户路由信息 / Get user routing information
   rpc GetRoute(GetRouteRequest) returns (GetRouteResponse);
+
+  // UnregisterRoute 注销路由 (用户断开连接时调用) / Unregister route (called when user disconnects)
   rpc UnregisterRoute(UnregisterRouteRequest) returns (UnregisterRouteResponse);
+
+  // GetOnlineStatus 获取用户在线状态 / Get user online status
   rpc GetOnlineStatus(GetOnlineStatusRequest) returns (GetOnlineStatusResponse);
 }
 
+// RegisterRouteRequest 注册路由请求
+// Register route request
 message RegisterRouteRequest {
-  int64 user_id = 1;
-  string device_id = 2;
-  string gateway_addr = 3;
+  int64 user_id = 1;         // 用户ID / User ID
+  string device_id = 2;      // 设备ID / Device ID
+  string gateway_addr = 3;   // Gateway服务器地址 / Gateway server address
 }
 
+// RegisterRouteResponse 注册路由响应
+// Register route response
 message RegisterRouteResponse {
-  bool success = 1;
-  string message = 2;
+  bool success = 1;    // 是否成功 / Success status
+  string message = 2;  // 响应消息 / Response message
 }
 
+// KeepAliveRequest 心跳请求
+// Keep alive request (heartbeat)
 message KeepAliveRequest {
-  int64 user_id = 1;
-  string device_id = 2;
+  int64 user_id = 1;     // 用户ID / User ID
+  string device_id = 2;  // 设备ID / Device ID
 }
 
+// KeepAliveResponse 心跳响应
+// Keep alive response
 message KeepAliveResponse {
-  bool success = 1;
+  bool success = 1;  // 是否成功 / Success status
 }
 
+// GetRouteRequest 获取路由请求
+// Get route request
 message GetRouteRequest {
-  int64 user_id = 1;
+  int64 user_id = 1;  // 用户ID / User ID
 }
 
+// GetRouteResponse 获取路由响应
+// Get route response
 message GetRouteResponse {
-  repeated DeviceRoute routes = 1;
+  repeated DeviceRoute routes = 1;  // 该用户的所有设备路由 / All device routes for this user
 }
 
+// DeviceRoute 设备路由信息
+// Device routing information
 message DeviceRoute {
-  string device_id = 1;
-  string gateway_addr = 2;
-  int64 last_active = 3;
+  string device_id = 1;      // 设备ID / Device ID
+  string gateway_addr = 2;   // 连接的Gateway地址 / Connected Gateway address
+  int64 last_active = 3;     // 最后活跃时间 (Unix时间戳) / Last active time (Unix timestamp)
 }
 
+// UnregisterRouteRequest 注销路由请求
+// Unregister route request
 message UnregisterRouteRequest {
-  int64 user_id = 1;
-  string device_id = 2;
+  int64 user_id = 1;     // 用户ID / User ID
+  string device_id = 2;  // 设备ID / Device ID
 }
 
+// UnregisterRouteResponse 注销路由响应
+// Unregister route response
 message UnregisterRouteResponse {
-  bool success = 1;
+  bool success = 1;  // 是否成功 / Success status
 }
 
+// GetOnlineStatusRequest 获取在线状态请求
+// Get online status request
 message GetOnlineStatusRequest {
-  int64 user_id = 1;
+  int64 user_id = 1;  // 用户ID / User ID
 }
 
+// GetOnlineStatusResponse 获取在线状态响应
+// Get online status response
 message GetOnlineStatusResponse {
-  bool online = 1;
-  repeated string device_ids = 2;
+  bool online = 1;                 // 是否在线 / Whether online
+  repeated string device_ids = 2;  // 在线设备ID列表 / List of online device IDs
 }

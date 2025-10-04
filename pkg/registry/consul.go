@@ -5,8 +5,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/dollarkillerx/im-system/pkg/logger"
 	consulapi "github.com/hashicorp/consul/api"
-	"github.com/yourusername/im-system/pkg/logger"
 	"go.uber.org/zap"
 )
 

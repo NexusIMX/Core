@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/yourusername/im-system/pkg/auth"
-	"github.com/yourusername/im-system/pkg/logger"
+	"github.com/dollarkillerx/im-system/pkg/auth"
+	"github.com/dollarkillerx/im-system/pkg/logger"
 	"go.uber.org/zap"
 )
 

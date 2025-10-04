@@ -731,7 +731,7 @@ const file_user_user_proto_rawDesc = "" +
 	"\x05Login\x12\x12.user.LoginRequest\x1a\x13.user.LoginResponse\x12B\n" +
 	"\vGetUserInfo\x12\x18.user.GetUserInfoRequest\x1a\x19.user.GetUserInfoResponse\x12K\n" +
 	"\x0eUpdateUserInfo\x12\x1b.user.UpdateUserInfoRequest\x1a\x1c.user.UpdateUserInfoResponse\x12H\n" +
-	"\rValidateToken\x12\x1a.user.ValidateTokenRequest\x1a\x1b.user.ValidateTokenResponseB9Z7github.com/yourusername/im-system/api/proto/user;userpbb\x06proto3"
+	"\rValidateToken\x12\x1a.user.ValidateTokenRequest\x1a\x1b.user.ValidateTokenResponseB:Z8github.com/dollarkillerx/im-system/api/proto/user;userpbb\x06proto3"
 
 var (
 	file_user_user_proto_rawDescOnce sync.Once

@@ -7,12 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	routerpb "github.com/yourusername/im-system/api/proto/router"
-	"github.com/yourusername/im-system/internal/router"
-	"github.com/yourusername/im-system/pkg/config"
-	"github.com/yourusername/im-system/pkg/logger"
-	redisutil "github.com/yourusername/im-system/pkg/redis"
-	"github.com/yourusername/im-system/pkg/registry"
+	routerpb "github.com/dollarkillerx/im-system/api/proto/router"
+	"github.com/dollarkillerx/im-system/internal/router"
+	"github.com/dollarkillerx/im-system/pkg/config"
+	"github.com/dollarkillerx/im-system/pkg/logger"
+	redisutil "github.com/dollarkillerx/im-system/pkg/redis"
+	"github.com/dollarkillerx/im-system/pkg/registry"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )

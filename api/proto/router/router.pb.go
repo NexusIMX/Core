@@ -611,7 +611,7 @@ const file_router_router_proto_rawDesc = "" +
 	"\tKeepAlive\x12\x18.router.KeepAliveRequest\x1a\x19.router.KeepAliveResponse\x12=\n" +
 	"\bGetRoute\x12\x17.router.GetRouteRequest\x1a\x18.router.GetRouteResponse\x12R\n" +
 	"\x0fUnregisterRoute\x12\x1e.router.UnregisterRouteRequest\x1a\x1f.router.UnregisterRouteResponse\x12R\n" +
-	"\x0fGetOnlineStatus\x12\x1e.router.GetOnlineStatusRequest\x1a\x1f.router.GetOnlineStatusResponseB=Z;github.com/yourusername/im-system/api/proto/router;routerpbb\x06proto3"
+	"\x0fGetOnlineStatus\x12\x1e.router.GetOnlineStatusRequest\x1a\x1f.router.GetOnlineStatusResponseB>Z<github.com/dollarkillerx/im-system/api/proto/router;routerpbb\x06proto3"
 
 var (
 	file_router_router_proto_rawDescOnce sync.Once

@@ -3,7 +3,7 @@ package user
 import (
 	"context"
 
-	userpb "github.com/yourusername/im-system/api/proto/user"
+	userpb "github.com/dollarkillerx/im-system/api/proto/user"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

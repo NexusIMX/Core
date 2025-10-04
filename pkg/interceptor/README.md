@@ -18,8 +18,8 @@
 
 ```go
 import (
-    "github.com/yourusername/im-system/pkg/auth"
-    "github.com/yourusername/im-system/pkg/interceptor"
+    "github.com/dollarkillerx/im-system/pkg/auth"
+    "github.com/dollarkillerx/im-system/pkg/interceptor"
 )
 
 // 创建 JWT Manager
@@ -44,7 +44,7 @@ server := grpc.NewServer(
 **从 context 获取用户信息:**
 
 ```go
-import "github.com/yourusername/im-system/pkg/interceptor"
+import "github.com/dollarkillerx/im-system/pkg/interceptor"
 
 func (s *MyService) SomeMethod(ctx context.Context, req *SomeRequest) (*SomeResponse, error) {
     // 获取用户 ID
@@ -74,7 +74,7 @@ func (s *MyService) SomeMethod(ctx context.Context, req *SomeRequest) (*SomeResp
 **使用示例:**
 
 ```go
-import "github.com/yourusername/im-system/pkg/interceptor"
+import "github.com/dollarkillerx/im-system/pkg/interceptor"
 
 server := grpc.NewServer(
     grpc.UnaryInterceptor(interceptor.LoggingUnaryInterceptor()),
@@ -110,7 +110,7 @@ server := grpc.NewServer(
 **使用示例:**
 
 ```go
-import "github.com/yourusername/im-system/pkg/interceptor"
+import "github.com/dollarkillerx/im-system/pkg/interceptor"
 
 server := grpc.NewServer(
     grpc.UnaryInterceptor(interceptor.RecoveryUnaryInterceptor()),
@@ -124,8 +124,8 @@ server := grpc.NewServer(
 
 ```go
 import (
-    "github.com/yourusername/im-system/pkg/auth"
-    "github.com/yourusername/im-system/pkg/interceptor"
+    "github.com/dollarkillerx/im-system/pkg/auth"
+    "github.com/dollarkillerx/im-system/pkg/interceptor"
     "google.golang.org/grpc"
     grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 )
@@ -198,7 +198,7 @@ import (
     "google.golang.org/grpc/credentials/insecure"
     "google.golang.org/grpc/metadata"
 
-    userpb "github.com/yourusername/im-system/api/proto/user"
+    userpb "github.com/dollarkillerx/im-system/api/proto/user"
 )
 
 func main() {
@@ -262,8 +262,8 @@ import (
     "context"
     "testing"
 
-    "github.com/yourusername/im-system/pkg/auth"
-    "github.com/yourusername/im-system/pkg/interceptor"
+    "github.com/dollarkillerx/im-system/pkg/auth"
+    "github.com/dollarkillerx/im-system/pkg/interceptor"
     "google.golang.org/grpc"
     "google.golang.org/grpc/metadata"
 )

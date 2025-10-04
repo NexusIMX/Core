@@ -687,7 +687,7 @@ const file_gateway_gateway_proto_rawDesc = "" +
 	"\x0eGatewayService\x12?\n" +
 	"\aConnect\x12\x17.gateway.GatewayMessage\x1a\x17.gateway.GatewayMessage(\x010\x01\x123\n" +
 	"\x04Send\x12\x14.gateway.SendRequest\x1a\x15.gateway.SendResponse\x123\n" +
-	"\x04Sync\x12\x14.gateway.SyncRequest\x1a\x15.gateway.SyncResponseB?Z=github.com/yourusername/im-system/api/proto/gateway;gatewaypbb\x06proto3"
+	"\x04Sync\x12\x14.gateway.SyncRequest\x1a\x15.gateway.SyncResponseB@Z>github.com/dollarkillerx/im-system/api/proto/gateway;gatewaypbb\x06proto3"
 
 var (
 	file_gateway_gateway_proto_rawDescOnce sync.Once

@@ -286,7 +286,7 @@ const file_common_common_proto_rawDesc = "" +
 	"\x05Error\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detailB=Z;github.com/yourusername/im-system/api/proto/common;commonpbb\x06proto3"
+	"\x06detail\x18\x03 \x01(\tR\x06detailB>Z<github.com/dollarkillerx/im-system/api/proto/common;commonpbb\x06proto3"
 
 var (
 	file_common_common_proto_rawDescOnce sync.Once

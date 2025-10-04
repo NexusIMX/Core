@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/dollarkillerx/im-system/pkg/config"
+	"github.com/dollarkillerx/im-system/pkg/logger"
 	_ "github.com/lib/pq"
-	"github.com/yourusername/im-system/pkg/config"
-	"github.com/yourusername/im-system/pkg/logger"
 	"go.uber.org/zap"
 )
 

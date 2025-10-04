@@ -9,6 +9,8 @@ server:
     grpc_port: 50054
   file:
     http_port: 8080
+    mode: debug
+    max_file_size: 524288000  # 500MB in bytes
 
 consul:
   address: localhost:8500

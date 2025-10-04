@@ -2,32 +2,36 @@ syntax = "proto3";
 
 package common;
 
-option go_package = "github.com/yourusername/im-system/api/proto/common;commonpb";
+option go_package = "github.com/dollarkillerx/im-system/api/proto/common;commonpb";
 
-// 通用响应
+// Response 通用响应结构
+// Common response structure for all API calls
 message Response {
-  int32 code = 1;
-  string message = 2;
-  bool success = 3;
+  int32 code = 1;        // 响应状态码 (0表示成功，非0表示错误) / Response code (0 for success, non-zero for errors)
+  string message = 2;    // 响应消息 / Response message
+  bool success = 3;      // 操作是否成功 / Whether the operation succeeded
 }
 
-// 分页请求
+// PaginationRequest 分页请求参数
+// Pagination request parameters for list queries
 message PaginationRequest {
-  int32 page = 1;
-  int32 page_size = 2;
+  int32 page = 1;        // 页码 (从1开始) / Page number (starts from 1)
+  int32 page_size = 2;   // 每页大小 / Number of items per page
 }
 
-// 分页响应
+// PaginationResponse 分页响应信息
+// Pagination response metadata
 message PaginationResponse {
-  int32 total = 1;
-  int32 page = 2;
-  int32 page_size = 3;
-  int32 total_pages = 4;
+  int32 total = 1;        // 总记录数 / Total number of records
+  int32 page = 2;         // 当前页码 / Current page number
+  int32 page_size = 3;    // 每页大小 / Items per page
+  int32 total_pages = 4;  // 总页数 / Total number of pages
 }
 
-// 错误信息
+// Error 详细错误信息
+// Detailed error information
 message Error {
-  int32 code = 1;
-  string message = 2;
-  string detail = 3;
+  int32 code = 1;      // 错误代码 / Error code
+  string message = 2;  // 错误消息 / Error message
+  string detail = 3;   // 错误详情 (用于调试) / Error details (for debugging)
 }

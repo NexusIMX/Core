@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/yourusername/im-system/pkg/auth"
-	"github.com/yourusername/im-system/pkg/logger"
+	"github.com/dollarkillerx/im-system/pkg/auth"
+	"github.com/dollarkillerx/im-system/pkg/logger"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -20,7 +20,7 @@ const (
 
 // AuthInterceptor JWT 认证拦截器
 type AuthInterceptor struct {
-	jwtManager   *auth.JWTManager
+	jwtManager    *auth.JWTManager
 	publicMethods map[string]bool // 不需要认证的方法
 }
 

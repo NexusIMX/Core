@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/dollarkillerx/im-system/pkg/config"
+	"github.com/dollarkillerx/im-system/pkg/logger"
 	"github.com/redis/go-redis/v9"
-	"github.com/yourusername/im-system/pkg/config"
-	"github.com/yourusername/im-system/pkg/logger"
 	"go.uber.org/zap"
 )
 

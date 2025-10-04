@@ -2,77 +2,110 @@ syntax = "proto3";
 
 package user;
 
-option go_package = "github.com/yourusername/im-system/api/proto/user;userpb";
+option go_package = "github.com/dollarkillerx/im-system/api/proto/user;userpb";
 
+// UserService 用户服务
+// User service for authentication and user management
 service UserService {
+  // Register 用户注册 / User registration
   rpc Register(RegisterRequest) returns (RegisterResponse);
+
+  // Login 用户登录 / User login
   rpc Login(LoginRequest) returns (LoginResponse);
+
+  // GetUserInfo 获取用户信息 / Get user information
   rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse);
+
+  // UpdateUserInfo 更新用户信息 / Update user information
   rpc UpdateUserInfo(UpdateUserInfoRequest) returns (UpdateUserInfoResponse);
+
+  // ValidateToken 验证Token有效性 / Validate token validity
   rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
 }
 
+// RegisterRequest 用户注册请求
+// User registration request
 message RegisterRequest {
-  string username = 1;
-  string password = 2;
-  string email = 3;
-  string nickname = 4;
+  string username = 1;  // 用户名 (唯一) / Username (unique)
+  string password = 2;  // 密码 (明文传输需使用TLS) / Password (requires TLS for secure transmission)
+  string email = 3;     // 邮箱 / Email address
+  string nickname = 4;  // 昵称 / Display name
 }
 
+// RegisterResponse 注册响应
+// Registration response
 message RegisterResponse {
-  int64 user_id = 1;
-  string message = 2;
+  int64 user_id = 1;   // 新创建的用户ID / Newly created user ID
+  string message = 2;  // 响应消息 / Response message
 }
 
+// LoginRequest 登录请求
+// Login request
 message LoginRequest {
-  string username = 1;
-  string password = 2;
-  string device_id = 3;
+  string username = 1;  // 用户名 / Username
+  string password = 2;  // 密码 / Password
+  string device_id = 3; // 设备ID (用于多端登录管理) / Device ID (for multi-device login management)
 }
 
+// LoginResponse 登录响应
+// Login response
 message LoginResponse {
-  int64 user_id = 1;
-  string token = 2;
-  int64 expires_at = 3;
-  UserInfo user_info = 4;
+  int64 user_id = 1;       // 用户ID / User ID
+  string token = 2;        // JWT访问令牌 / JWT access token
+  int64 expires_at = 3;    // Token过期时间 (Unix时间戳) / Token expiration time (Unix timestamp)
+  UserInfo user_info = 4;  // 用户详细信息 / User detailed information
 }
 
+// GetUserInfoRequest 获取用户信息请求
+// Get user information request
 message GetUserInfoRequest {
-  int64 user_id = 1;
+  int64 user_id = 1;  // 目标用户ID / Target user ID
 }
 
+// GetUserInfoResponse 获取用户信息响应
+// Get user information response
 message GetUserInfoResponse {
-  UserInfo user_info = 1;
+  UserInfo user_info = 1;  // 用户信息 / User information
 }
 
+// UpdateUserInfoRequest 更新用户信息请求
+// Update user information request
 message UpdateUserInfoRequest {
-  int64 user_id = 1;
-  optional string nickname = 2;
-  optional string avatar = 3;
-  optional string bio = 4;
+  int64 user_id = 1;            // 用户ID / User ID
+  optional string nickname = 2;  // 昵称 (可选) / Nickname (optional)
+  optional string avatar = 3;    // 头像URL (可选) / Avatar URL (optional)
+  optional string bio = 4;       // 个人简介 (可选) / Bio (optional)
 }
 
+// UpdateUserInfoResponse 更新用户信息响应
+// Update user information response
 message UpdateUserInfoResponse {
-  bool success = 1;
-  string message = 2;
+  bool success = 1;    // 是否成功 / Success status
+  string message = 2;  // 响应消息 / Response message
 }
 
+// ValidateTokenRequest Token验证请求
+// Token validation request
 message ValidateTokenRequest {
-  string token = 1;
+  string token = 1;  // JWT令牌 / JWT token
 }
 
+// ValidateTokenResponse Token验证响应
+// Token validation response
 message ValidateTokenResponse {
-  bool valid = 1;
-  int64 user_id = 2;
-  string device_id = 3;
+  bool valid = 1;         // Token是否有效 / Whether token is valid
+  int64 user_id = 2;      // 用户ID / User ID
+  string device_id = 3;   // 设备ID / Device ID
 }
 
+// UserInfo 用户信息
+// User information
 message UserInfo {
-  int64 user_id = 1;
-  string username = 2;
-  string nickname = 3;
-  string email = 4;
-  string avatar = 5;
-  string bio = 6;
-  int64 created_at = 7;
+  int64 user_id = 1;     // 用户ID / User ID
+  string username = 2;   // 用户名 / Username
+  string nickname = 3;   // 昵称 / Display name
+  string email = 4;      // 邮箱 / Email address
+  string avatar = 5;     // 头像URL / Avatar URL
+  string bio = 6;        // 个人简介 / Bio
+  int64 created_at = 7;  // 创建时间 (Unix时间戳) / Creation time (Unix timestamp)
 }

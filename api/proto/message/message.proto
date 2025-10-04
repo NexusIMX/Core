@@ -2,128 +2,175 @@ syntax = "proto3";
 
 package message;
 
-option go_package = "github.com/yourusername/im-system/api/proto/message;messagepb";
+option go_package = "github.com/dollarkillerx/im-system/api/proto/message;messagepb";
 
 import "google/protobuf/struct.proto";
 
+// MessageService 消息服务
+// Message service for sending, receiving, and managing messages
 service MessageService {
+  // SendMessage 发送消息 / Send a message
   rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
+
+  // PullMessages 拉取消息 / Pull messages from a conversation
   rpc PullMessages(PullMessagesRequest) returns (PullMessagesResponse);
+
+  // GetConversation 获取会话信息 / Get conversation information
   rpc GetConversation(GetConversationRequest) returns (GetConversationResponse);
+
+  // CreateConversation 创建会话 / Create a new conversation
   rpc CreateConversation(CreateConversationRequest) returns (CreateConversationResponse);
+
+  // UpdateReadSeq 更新已读序列号 / Update read sequence number
   rpc UpdateReadSeq(UpdateReadSeqRequest) returns (UpdateReadSeqResponse);
+
+  // NotifyNewMessage 通知新消息 (内部调用) / Notify new message (internal call)
   rpc NotifyNewMessage(NotifyNewMessageRequest) returns (NotifyNewMessageResponse);
 }
 
+// ConversationType 会话类型
+// Conversation type enumeration
 enum ConversationType {
-  DIRECT = 0;
-  GROUP = 1;
-  CHANNEL = 2;
+  DIRECT = 0;   // 单聊 / Direct message (one-to-one)
+  GROUP = 1;    // 群聊 / Group chat
+  CHANNEL = 2;  // 频道 (广播式) / Channel (broadcast)
 }
 
+// ConversationRole 会话成员角色
+// Conversation member role enumeration
 enum ConversationRole {
-  OWNER = 0;
-  ADMIN = 1;
-  PUBLISHER = 2;
-  MEMBER = 3;
-  VIEWER = 4;
+  OWNER = 0;      // 所有者 (完全权限) / Owner (full permissions)
+  ADMIN = 1;      // 管理员 / Administrator
+  PUBLISHER = 2;  // 发布者 (可发消息) / Publisher (can send messages)
+  MEMBER = 3;     // 普通成员 / Regular member
+  VIEWER = 4;     // 观察者 (只读) / Viewer (read-only)
 }
 
+// SendMessageRequest 发送消息请求
+// Send message request
 message SendMessageRequest {
-  int64 conv_id = 1;
-  int64 sender_id = 2;
-  ConversationType conv_type = 3;
-  google.protobuf.Struct body = 4;
-  optional string reply_to = 5;
-  repeated int64 mentions = 6;
+  int64 conv_id = 1;                      // 会话ID / Conversation ID
+  int64 sender_id = 2;                    // 发送者用户ID / Sender user ID
+  ConversationType conv_type = 3;         // 会话类型 / Conversation type
+  google.protobuf.Struct body = 4;        // 消息体 (JSON格式，支持文本、图片、文件等) / Message body (JSON format, supports text, images, files, etc.)
+  optional string reply_to = 5;           // 回复的消息ID (可选) / Reply to message ID (optional)
+  repeated int64 mentions = 6;            // @提到的用户ID列表 / List of mentioned user IDs
 }
 
+// SendMessageResponse 发送消息响应
+// Send message response
 message SendMessageResponse {
-  string msg_id = 1;
-  int64 seq = 2;
-  int64 created_at = 3;
+  string msg_id = 1;     // 消息唯一ID / Unique message ID
+  int64 seq = 2;         // 消息序列号 (会话内递增) / Message sequence number (incremental within conversation)
+  int64 created_at = 3;  // 创建时间 (Unix时间戳) / Creation time (Unix timestamp)
 }
 
+// PullMessagesRequest 拉取消息请求
+// Pull messages request
 message PullMessagesRequest {
-  int64 conv_id = 1;
-  int64 since_seq = 2;
-  int32 limit = 3;
+  int64 conv_id = 1;    // 会话ID / Conversation ID
+  int64 since_seq = 2;  // 起始序列号 (拉取此序列号之后的消息) / Start sequence number (pull messages after this sequence)
+  int32 limit = 3;      // 限制数量 / Limit count
 }
 
+// PullMessagesResponse 拉取消息响应
+// Pull messages response
 message PullMessagesResponse {
-  repeated Message messages = 1;
-  bool has_more = 2;
+  repeated Message messages = 1;  // 消息列表 / Message list
+  bool has_more = 2;              // 是否还有更多消息 / Whether there are more messages
 }
 
+// Message 消息实体
+// Message entity
 message Message {
-  string msg_id = 1;
-  int64 conv_id = 2;
-  int64 seq = 3;
-  int64 sender_id = 4;
-  ConversationType conv_type = 5;
-  google.protobuf.Struct body = 6;
-  optional string reply_to = 7;
-  repeated int64 mentions = 8;
-  string visibility = 9;
-  int64 created_at = 10;
+  string msg_id = 1;                      // 消息唯一ID / Unique message ID
+  int64 conv_id = 2;                      // 会话ID / Conversation ID
+  int64 seq = 3;                          // 消息序列号 / Message sequence number
+  int64 sender_id = 4;                    // 发送者用户ID / Sender user ID
+  ConversationType conv_type = 5;         // 会话类型 / Conversation type
+  google.protobuf.Struct body = 6;        // 消息体 / Message body
+  optional string reply_to = 7;           // 回复的消息ID / Reply to message ID
+  repeated int64 mentions = 8;            // @提到的用户ID列表 / Mentioned user IDs
+  string visibility = 9;                  // 可见性 (public/private) / Visibility (public/private)
+  int64 created_at = 10;                  // 创建时间 / Creation time
 }
 
+// GetConversationRequest 获取会话请求
+// Get conversation request
 message GetConversationRequest {
-  int64 conv_id = 1;
+  int64 conv_id = 1;  // 会话ID / Conversation ID
 }
 
+// GetConversationResponse 获取会话响应
+// Get conversation response
 message GetConversationResponse {
-  Conversation conversation = 1;
+  Conversation conversation = 1;  // 会话详情 / Conversation details
 }
 
+// Conversation 会话实体
+// Conversation entity
 message Conversation {
-  int64 id = 1;
-  ConversationType type = 2;
-  string title = 3;
-  int64 owner_id = 4;
-  int64 created_at = 5;
-  repeated ConversationMember members = 6;
+  int64 id = 1;                            // 会话ID / Conversation ID
+  ConversationType type = 2;               // 会话类型 / Conversation type
+  string title = 3;                        // 会话标题 / Conversation title
+  int64 owner_id = 4;                      // 所有者用户ID / Owner user ID
+  int64 created_at = 5;                    // 创建时间 / Creation time
+  repeated ConversationMember members = 6; // 成员列表 / Member list
 }
 
+// ConversationMember 会话成员
+// Conversation member
 message ConversationMember {
-  int64 user_id = 1;
-  ConversationRole role = 2;
-  bool muted = 3;
-  int64 last_read_seq = 4;
-  int64 joined_at = 5;
+  int64 user_id = 1;         // 用户ID / User ID
+  ConversationRole role = 2; // 成员角色 / Member role
+  bool muted = 3;            // 是否静音 / Whether muted
+  int64 last_read_seq = 4;   // 最后已读序列号 / Last read sequence number
+  int64 joined_at = 5;       // 加入时间 / Join time
 }
 
+// CreateConversationRequest 创建会话请求
+// Create conversation request
 message CreateConversationRequest {
-  ConversationType type = 1;
-  string title = 2;
-  int64 owner_id = 3;
-  repeated int64 member_ids = 4;
+  ConversationType type = 1;      // 会话类型 / Conversation type
+  string title = 2;               // 会话标题 / Conversation title
+  int64 owner_id = 3;             // 所有者用户ID / Owner user ID
+  repeated int64 member_ids = 4;  // 初始成员ID列表 / Initial member ID list
 }
 
+// CreateConversationResponse 创建会话响应
+// Create conversation response
 message CreateConversationResponse {
-  int64 conv_id = 1;
-  string message = 2;
+  int64 conv_id = 1;   // 新创建的会话ID / Newly created conversation ID
+  string message = 2;  // 响应消息 / Response message
 }
 
+// UpdateReadSeqRequest 更新已读序列号请求
+// Update read sequence request
 message UpdateReadSeqRequest {
-  int64 conv_id = 1;
-  int64 user_id = 2;
-  int64 seq = 3;
+  int64 conv_id = 1;  // 会话ID / Conversation ID
+  int64 user_id = 2;  // 用户ID / User ID
+  int64 seq = 3;      // 已读序列号 / Read sequence number
 }
 
+// UpdateReadSeqResponse 更新已读序列号响应
+// Update read sequence response
 message UpdateReadSeqResponse {
-  bool success = 1;
+  bool success = 1;  // 是否成功 / Success status
 }
 
+// NotifyNewMessageRequest 通知新消息请求 (内部服务间调用)
+// Notify new message request (internal service call)
 message NotifyNewMessageRequest {
-  int64 conv_id = 1;
-  string msg_id = 2;
-  int64 seq = 3;
-  int64 sender_id = 4;
-  repeated int64 recipient_ids = 5;
+  int64 conv_id = 1;                 // 会话ID / Conversation ID
+  string msg_id = 2;                 // 消息ID / Message ID
+  int64 seq = 3;                     // 消息序列号 / Message sequence number
+  int64 sender_id = 4;               // 发送者ID / Sender ID
+  repeated int64 recipient_ids = 5;  // 接收者ID列表 / Recipient ID list
 }
 
+// NotifyNewMessageResponse 通知新消息响应
+// Notify new message response
 message NotifyNewMessageResponse {
-  bool success = 1;
-  int32 notified_count = 2;
+  bool success = 1;         // 是否成功 / Success status
+  int32 notified_count = 2; // 成功通知的用户数 / Number of users successfully notified
 }

@@ -52,7 +52,9 @@ type UserConfig struct {
 }
 
 type FileSvcConfig struct {
-	HTTPPort int `mapstructure:"http_port"`
+	HTTPPort    int    `mapstructure:"http_port"`
+	Mode        string `mapstructure:"mode"`
+	MaxFileSize int64  `mapstructure:"max_file_size"`
 }
 
 type DatabaseConfig struct {
@@ -81,12 +83,12 @@ type JWTConfig struct {
 }
 
 type S3Config struct {
-	Endpoint  string `mapstructure:"endpoint"`
-	Region    string `mapstructure:"region"`
-	Bucket    string `mapstructure:"bucket"`
-	AccessKey string `mapstructure:"access_key"`
-	SecretKey string `mapstructure:"secret_key"`
-	UseSSL    bool   `mapstructure:"use_ssl"`
+	Endpoint        string `mapstructure:"endpoint"`
+	Region          string `mapstructure:"region"`
+	Bucket          string `mapstructure:"bucket"`
+	AccessKeyID     string `mapstructure:"access_key"`
+	SecretAccessKey string `mapstructure:"secret_key"`
+	UseSSL          bool   `mapstructure:"use_ssl"`
 }
 
 type LogConfig struct {
@@ -142,6 +144,8 @@ func Load(configPath string) (*Config, error) {
 	v.BindEnv("server.message.grpc_port", "MESSAGE_GRPC_PORT")
 	v.BindEnv("server.user.grpc_port", "USER_GRPC_PORT")
 	v.BindEnv("server.file.http_port", "FILE_HTTP_PORT")
+	v.BindEnv("server.file.mode", "FILE_MODE")
+	v.BindEnv("server.file.max_file_size", "FILE_MAX_SIZE")
 
 	v.BindEnv("log.level", "LOG_LEVEL")
 

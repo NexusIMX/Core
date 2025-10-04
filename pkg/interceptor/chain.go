@@ -1,16 +1,16 @@
 package interceptor
 
 import (
-	"github.com/yourusername/im-system/pkg/auth"
+	"github.com/dollarkillerx/im-system/pkg/auth"
 	"google.golang.org/grpc"
 )
 
 // ChainConfig 拦截器链配置
 type ChainConfig struct {
-	JWTManager    *auth.JWTManager
-	PublicMethods []string
-	EnableAuth    bool
-	EnableLogging bool
+	JWTManager     *auth.JWTManager
+	PublicMethods  []string
+	EnableAuth     bool
+	EnableLogging  bool
 	EnableRecovery bool
 }
 

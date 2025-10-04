@@ -3,7 +3,7 @@ package router
 import (
 	"context"
 
-	routerpb "github.com/yourusername/im-system/api/proto/router"
+	routerpb "github.com/dollarkillerx/im-system/api/proto/router"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

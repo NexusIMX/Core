@@ -1200,7 +1200,7 @@ const file_message_message_proto_rawDesc = "" +
 	"\x0fGetConversation\x12\x1f.message.GetConversationRequest\x1a .message.GetConversationResponse\x12]\n" +
 	"\x12CreateConversation\x12\".message.CreateConversationRequest\x1a#.message.CreateConversationResponse\x12N\n" +
 	"\rUpdateReadSeq\x12\x1d.message.UpdateReadSeqRequest\x1a\x1e.message.UpdateReadSeqResponse\x12W\n" +
-	"\x10NotifyNewMessage\x12 .message.NotifyNewMessageRequest\x1a!.message.NotifyNewMessageResponseB?Z=github.com/yourusername/im-system/api/proto/message;messagepbb\x06proto3"
+	"\x10NotifyNewMessage\x12 .message.NotifyNewMessageRequest\x1a!.message.NotifyNewMessageResponseB@Z>github.com/dollarkillerx/im-system/api/proto/message;messagepbb\x06proto3"
 
 var (
 	file_message_message_proto_rawDescOnce sync.Once
