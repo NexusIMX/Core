@@ -56,24 +56,21 @@ services:
     networks:
       - im-network
 
-  # MinIO S3-compatible storage
-  minio:
-    image: minio/minio:latest
-    container_name: im-minio
+  # Garage S3-compatible storage
+  garage:
+    image: dxflrs/garage:v1.0.0
+    container_name: im-garage
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "3900:3900"  # S3 API
+      - "3902:3902"  # Admin API
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    command: server /data --console-address ":9001"
+      GARAGE_RPC_SECRET: "supersecretgaragekey1234567890abcdef"
+    command:
+      - server
     volumes:
-      - minio_data:/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
+      - garage_data:/var/lib/garage/data
+      - garage_meta:/var/lib/garage/meta
+      - ./garage.toml:/etc/garage.toml:ro
     networks:
       - im-network
 
@@ -200,11 +197,11 @@ services:
       POSTGRES_USER: imuser
       POSTGRES_PASSWORD: impassword
       POSTGRES_DB: im_system
-      S3_ENDPOINT: http://minio:9000
-      S3_REGION: us-east-1
+      S3_ENDPOINT: http://garage:3900
+      S3_REGION: garage
       S3_BUCKET: im-files
-      S3_ACCESS_KEY: minioadmin
-      S3_SECRET_KEY: minioadmin
+      S3_ACCESS_KEY: GK31c2f218bd0e44fcbb88de5b4
+      S3_SECRET_KEY: b892c0665f0ada8a4755dae98baa3e133590e11dae3bcc1f9d769d67f16c3835
       S3_USE_SSL: false
       CONSUL_ADDRESS: consul:8500
       FILE_HTTP_PORT: 8080
@@ -212,8 +209,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      minio:
-        condition: service_healthy
+      garage:
+        condition: service_started
       consul:
         condition: service_healthy
     networks:
@@ -228,4 +225,5 @@ volumes:
   postgres_data:
   redis_data:
   consul_data:
-  minio_data:
+  garage_data:
+  garage_meta:
