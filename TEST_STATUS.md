@@ -17,6 +17,8 @@
 | **internal/user** | `service_test.go` | 32.6% | ✅ 通过 |
 | **internal/message** | `service_test.go` | 20.7% | ✅ 通过 |
 | **internal/file** | `service_test.go` | 19.1% | ✅ 通过 |
+| **internal/router** | `service_test.go` | 60.2% | ✅ 通过 |
+| **internal/gateway** | `connection_manager_test.go` | 21.3% | ✅ 通过 |
 
 ### 测试详情
 
@@ -156,14 +158,71 @@
 
 ---
 
+#### 6. internal/router - 路由服务 (60.2% 覆盖率)
+
+**通过的测试**:
+- ✅ TestService_RegisterRoute - 注册设备路由
+  - 成功注册
+  - 多设备注册
+- ✅ TestService_GetRoute - 获取路由信息
+  - 获取已存在路由
+  - 获取不存在路由
+- ✅ TestService_KeepAlive - 路由保活
+  - 成功保活并更新时间
+  - 设备不存在
+- ✅ TestService_UnregisterRoute - 注销路由
+  - 注销第一个设备
+  - 注销最后一个设备
+- ✅ TestService_GetOnlineStatus - 获取在线状态
+  - 多设备在线
+  - 用户离线
+  - 注销后离线
+- ✅ TestDeviceRoute_JSONMarshaling - JSON 序列化测试
+- ✅ TestService_ConcurrentRegistration - 并发注册测试
+- ✅ TestMockRouteStorage - Mock 实现测试
+
+**覆盖的功能**:
+- 设备路由注册和管理
+- Redis 存储操作 (使用 miniredis 模拟)
+- 在线状态跟踪
+- 路由保活机制
+- 并发安全
+
+---
+
+#### 7. internal/gateway - 网关连接管理 (21.3% 覆盖率)
+
+**通过的测试**:
+- ✅ TestNewConnectionManager - 连接管理器初始化
+- ✅ TestConnectionManager_AddConnection - 添加连接
+- ✅ TestConnectionManager_RemoveConnection - 移除连接
+- ✅ TestConnectionManager_GetConnection - 获取连接
+- ✅ TestConnectionManager_GetUserConnections - 获取用户所有连接
+- ✅ TestConnectionManager_GetTotalConnections - 获取总连接数
+- ✅ TestConnectionManager_ReplaceConnection - 替换连接
+- ✅ TestConnectionManager_ConcurrentAccess - 并发访问测试
+- ✅ TestConnectionManager_cleanupOnce - 清理不活跃连接
+- ✅ TestConnectionManager_CleanupInactive_Cancellation - 清理取消测试
+- ✅ TestConnection_UpdateActivity - 更新活跃时间
+- ✅ TestConnection_Close - 关闭连接
+
+**覆盖的功能**:
+- 连接生命周期管理
+- 多设备连接支持
+- 不活跃连接清理
+- 并发安全
+- 连接替换机制
+
+---
+
 ## 📊 测试统计
 
 ```
-Total Tests:    16 test functions
-Sub-tests:      27+ individual test cases
+Total Tests:    23 test functions
+Sub-tests:      40+ individual test cases
 Pass Rate:      100%
-Total Coverage: 4.9% (包含未测试的基础设施代码)
-Service Coverage: 24.2% (平均)
+Total Coverage: 8.9% (包含所有未测试代码)
+Service Coverage: 30.5% (服务层平均)
 ```
 
 ---
@@ -398,9 +457,11 @@ func setupPostgres(t *testing.T) *sql.DB {
 - [x] internal/user 测试通过 (32.6% 覆盖率)
 - [x] internal/message 测试通过 (20.7% 覆盖率)
 - [x] internal/file 测试通过 (19.1% 覆盖率)
+- [x] internal/router 测试通过 (60.2% 覆盖率)
+- [x] internal/gateway 测试通过 (21.3% 覆盖率)
 - [x] 服务层接口定义
+- [x] 所有服务单元测试完成
 - [x] 测试文档完善
-- [ ] Router Service 单元测试
 - [ ] 集成测试环境搭建
 - [ ] CI/CD 配置
 
@@ -409,23 +470,26 @@ func setupPostgres(t *testing.T) *sql.DB {
 ## 📈 测试进度
 
 ```
-总体进度: ▓▓▓▓▓▓▓▓▓░ 90%
+总体进度: ▓▓▓▓▓▓▓▓▓▓ 100% (单元测试阶段)
 
 ✅ 已完成:
   - pkg 公共包测试 (100%)
   - 服务层接口重构 (100%)
-  - User/Message/File Service 单元测试
-  - 测试框架搭建
-  - 测试文档
+  - 所有服务单元测试 (100%)
+    - User Service
+    - Message Service
+    - File Service
+    - Router Service
+    - Gateway Service (ConnectionManager)
+  - 测试框架搭建 (100%)
+  - 测试文档 (100%)
 
-🔄 进行中:
-  - Router Service 单元测试
+📋 下一阶段:
   - 集成测试环境搭建
-
-📋 计划中:
-  - 完整的集成测试
+  - 完整的集成测试套件
   - E2E 测试
-  - 性能测试
+  - 性能基准测试
+  - CI/CD 配置
 ```
 
 ---
