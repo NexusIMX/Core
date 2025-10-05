@@ -7,23 +7,22 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/dollarkillerx/im-system/pkg/s3"
 	"github.com/google/uuid"
 )
 
 // Service 文件服务
 type Service struct {
-	repo     *Repository
-	s3Client *s3.Client
-	maxSize  int64
+	repo    FileRepository
+	storage StorageClient
+	maxSize int64
 }
 
 // NewService 创建文件服务
-func NewService(repo *Repository, s3Client *s3.Client, maxSize int64) *Service {
+func NewService(repo FileRepository, storage StorageClient, maxSize int64) *Service {
 	return &Service{
-		repo:     repo,
-		s3Client: s3Client,
-		maxSize:  maxSize,
+		repo:    repo,
+		storage: storage,
+		maxSize: maxSize,
 	}
 }
 
@@ -43,9 +42,9 @@ func (s *Service) UploadFile(ctx context.Context, uploaderID int64, fileName str
 	storageKey := fmt.Sprintf("uploads/%d/%02d/%02d/%s%s",
 		now.Year(), now.Month(), now.Day(), fileID, ext)
 
-	// 上传到 S3
-	if err := s.s3Client.Upload(ctx, storageKey, fileData, contentType); err != nil {
-		return nil, fmt.Errorf("failed to upload to S3: %w", err)
+	// 上传到对象存储
+	if err := s.storage.Upload(ctx, storageKey, fileData, contentType); err != nil {
+		return nil, fmt.Errorf("failed to upload to storage: %w", err)
 	}
 
 	// 创建文件记录
@@ -60,8 +59,8 @@ func (s *Service) UploadFile(ctx context.Context, uploaderID int64, fileName str
 	}
 
 	if err := s.repo.Create(ctx, file); err != nil {
-		// 如果数据库插入失败，尝试删除 S3 文件
-		_ = s.s3Client.Delete(ctx, storageKey)
+		// 如果数据库插入失败，尝试删除存储文件
+		_ = s.storage.Delete(ctx, storageKey)
 		return nil, fmt.Errorf("failed to create file record: %w", err)
 	}
 
@@ -81,10 +80,10 @@ func (s *Service) DownloadFile(ctx context.Context, fileID string) (io.ReadClose
 		return nil, nil, err
 	}
 
-	// 从 S3 下载
-	body, err := s.s3Client.Download(ctx, file.StorageKey)
+	// 从对象存储下载
+	body, err := s.storage.Download(ctx, file.StorageKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to download from S3: %w", err)
+		return nil, nil, fmt.Errorf("failed to download from storage: %w", err)
 	}
 
 	return body, file, nil
@@ -99,7 +98,7 @@ func (s *Service) GetDownloadURL(ctx context.Context, fileID string) (string, er
 	}
 
 	// 生成预签名 URL
-	url, err := s.s3Client.GetPresignedURL(ctx, file.StorageKey)
+	url, err := s.storage.GetPresignedURL(ctx, file.StorageKey)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate download URL: %w", err)
 	}
@@ -125,9 +124,9 @@ func (s *Service) DeleteFile(ctx context.Context, fileID string, userID int64) e
 		return err
 	}
 
-	// 从 S3 删除（异步，失败也不影响）
+	// 从对象存储删除（异步，失败也不影响）
 	go func() {
-		_ = s.s3Client.Delete(context.Background(), file.StorageKey)
+		_ = s.storage.Delete(context.Background(), file.StorageKey)
 	}()
 
 	return nil

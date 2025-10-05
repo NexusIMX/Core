@@ -5,29 +5,34 @@ import (
 	"context"
 	"errors"
 	"io"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/dollarkillerx/im-system/pkg/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// MockRepository is a mock implementation of Repository
-type MockRepository struct {
-	files           map[string]*File
-	createFunc      func(ctx context.Context, file *File) error
-	getByFileIDFunc func(ctx context.Context, fileID string) (*File, error)
-	deleteFunc      func(ctx context.Context, fileID string) error
-	listFunc        func(ctx context.Context, userID int64, limit, offset int32) ([]*File, error)
+func init() {
+	_ = logger.Init("error", "console", []string{"stdout"})
 }
 
-func newMockRepository() *MockRepository {
-	return &MockRepository{
+// MockFileRepository is a mock implementation of FileRepository
+type MockFileRepository struct {
+	files          map[string]*File
+	createFunc     func(ctx context.Context, file *File) error
+	getByFileIDFunc func(ctx context.Context, fileID string) (*File, error)
+	deleteFunc     func(ctx context.Context, fileID string) error
+}
+
+func newMockFileRepository() *MockFileRepository {
+	return &MockFileRepository{
 		files: make(map[string]*File),
 	}
 }
 
-func (m *MockRepository) Create(ctx context.Context, file *File) error {
+func (m *MockFileRepository) Create(ctx context.Context, file *File) error {
 	if m.createFunc != nil {
 		return m.createFunc(ctx, file)
 	}
@@ -35,7 +40,7 @@ func (m *MockRepository) Create(ctx context.Context, file *File) error {
 	return nil
 }
 
-func (m *MockRepository) GetByFileID(ctx context.Context, fileID string) (*File, error) {
+func (m *MockFileRepository) GetByFileID(ctx context.Context, fileID string) (*File, error) {
 	if m.getByFileIDFunc != nil {
 		return m.getByFileIDFunc(ctx, fileID)
 	}
@@ -46,43 +51,44 @@ func (m *MockRepository) GetByFileID(ctx context.Context, fileID string) (*File,
 	return file, nil
 }
 
-func (m *MockRepository) Delete(ctx context.Context, fileID string) error {
+func (m *MockFileRepository) Delete(ctx context.Context, fileID string) error {
 	if m.deleteFunc != nil {
 		return m.deleteFunc(ctx, fileID)
 	}
-	delete(m.files, fileID)
+	file, ok := m.files[fileID]
+	if !ok {
+		return errors.New("file not found")
+	}
+	file.Status = "deleted"
 	return nil
 }
 
-func (m *MockRepository) ListByUploader(ctx context.Context, userID int64, limit, offset int32) ([]*File, error) {
-	if m.listFunc != nil {
-		return m.listFunc(ctx, userID, limit, offset)
-	}
-	var files []*File
+func (m *MockFileRepository) ListByUploader(ctx context.Context, userID int64, limit, offset int32) ([]*File, error) {
+	var result []*File
 	for _, file := range m.files {
-		if file.UploaderID == userID {
-			files = append(files, file)
+		if file.UploaderID == userID && file.Status == "active" {
+			result = append(result, file)
 		}
 	}
-	return files, nil
+	return result, nil
 }
 
-// MockS3Client is a mock implementation of S3 client
-type MockS3Client struct {
+// MockStorageClient is a mock implementation of StorageClient
+type MockStorageClient struct {
+	storage            map[string][]byte
 	uploadFunc         func(ctx context.Context, key string, body io.Reader, contentType string) error
 	downloadFunc       func(ctx context.Context, key string) (io.ReadCloser, error)
 	deleteFunc         func(ctx context.Context, key string) error
 	getPresignedURLFunc func(ctx context.Context, key string) (string, error)
-	storage            map[string][]byte
 }
 
-func newMockS3Client() *MockS3Client {
-	return &MockS3Client{
+func newMockStorageClient() *MockStorageClient {
+	return &MockStorageClient{
 		storage: make(map[string][]byte),
 	}
 }
 
-func (m *MockS3Client) Upload(ctx context.Context, key string, body io.Reader, contentType string) error {
+func (m *MockStorageClient) Upload(ctx context.Context, key string, body io.Reader, contentType string) error {
 	if m.uploadFunc != nil {
 		return m.uploadFunc(ctx, key, body, contentType)
 	}
@@ -94,18 +100,18 @@ func (m *MockS3Client) Upload(ctx context.Context, key string, body io.Reader, c
 	return nil
 }
 
-func (m *MockS3Client) Download(ctx context.Context, key string) (io.ReadCloser, error) {
+func (m *MockStorageClient) Download(ctx context.Context, key string) (io.ReadCloser, error) {
 	if m.downloadFunc != nil {
 		return m.downloadFunc(ctx, key)
 	}
 	data, ok := m.storage[key]
 	if !ok {
-		return nil, errors.New("file not found in S3")
+		return nil, errors.New("file not found in storage")
 	}
 	return io.NopCloser(bytes.NewReader(data)), nil
 }
 
-func (m *MockS3Client) Delete(ctx context.Context, key string) error {
+func (m *MockStorageClient) Delete(ctx context.Context, key string) error {
 	if m.deleteFunc != nil {
 		return m.deleteFunc(ctx, key)
 	}
@@ -113,24 +119,14 @@ func (m *MockS3Client) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
-func (m *MockS3Client) GetPresignedURL(ctx context.Context, key string) (string, error) {
+func (m *MockStorageClient) GetPresignedURL(ctx context.Context, key string) (string, error) {
 	if m.getPresignedURLFunc != nil {
 		return m.getPresignedURLFunc(ctx, key)
 	}
-	return "https://s3.example.com/" + key, nil
-}
-
-func TestNewService(t *testing.T) {
-	repo := newMockRepository()
-	s3Client := newMockS3Client()
-	maxSize := int64(524288000) // 500MB
-
-	service := NewService(repo, s3Client, maxSize)
-
-	assert.NotNil(t, service)
-	assert.NotNil(t, service.repo)
-	assert.NotNil(t, service.s3Client)
-	assert.Equal(t, maxSize, service.maxSize)
+	if _, ok := m.storage[key]; !ok {
+		return "", errors.New("file not found in storage")
+	}
+	return "https://example.com/presigned/" + key, nil
 }
 
 func TestService_UploadFile(t *testing.T) {
@@ -140,64 +136,89 @@ func TestService_UploadFile(t *testing.T) {
 		fileName    string
 		fileSize    int64
 		contentType string
-		fileData    []byte
+		fileData    string
 		maxSize     int64
+		setupMock   func(*MockFileRepository, *MockStorageClient)
 		wantErr     bool
-		errMsg      string
+		errContains string
 	}{
 		{
 			name:        "successful upload",
 			uploaderID:  100,
-			fileName:    "test.jpg",
+			fileName:    "test.txt",
 			fileSize:    1024,
-			contentType: "image/jpeg",
-			fileData:    []byte("fake image data"),
-			maxSize:     524288000,
-			wantErr:     false,
-		},
-		{
-			name:        "file too large",
-			uploaderID:  100,
-			fileName:    "large.mp4",
-			fileSize:    524288001,
-			contentType: "video/mp4",
-			fileData:    []byte("large file"),
-			maxSize:     524288000,
-			wantErr:     true,
-			errMsg:      "file size exceeds maximum",
-		},
-		{
-			name:        "small text file",
-			uploaderID:  200,
-			fileName:    "document.txt",
-			fileSize:    100,
 			contentType: "text/plain",
-			fileData:    []byte("Hello, World!"),
-			maxSize:     524288000,
+			fileData:    "test file content",
+			maxSize:     10 * 1024 * 1024,
 			wantErr:     false,
+		},
+		{
+			name:        "file size exceeds maximum",
+			uploaderID:  100,
+			fileName:    "large.txt",
+			fileSize:    100 * 1024 * 1024,
+			contentType: "text/plain",
+			fileData:    "large file",
+			maxSize:     10 * 1024 * 1024,
+			wantErr:     true,
+			errContains: "exceeds maximum allowed size",
+		},
+		{
+			name:        "storage upload failure",
+			uploaderID:  100,
+			fileName:    "test.txt",
+			fileSize:    1024,
+			contentType: "text/plain",
+			fileData:    "test content",
+			maxSize:     10 * 1024 * 1024,
+			setupMock: func(repo *MockFileRepository, storage *MockStorageClient) {
+				storage.uploadFunc = func(ctx context.Context, key string, body io.Reader, contentType string) error {
+					return errors.New("S3 upload failed")
+				}
+			},
+			wantErr:     true,
+			errContains: "failed to upload to storage",
+		},
+		{
+			name:        "database create failure",
+			uploaderID:  100,
+			fileName:    "test.txt",
+			fileSize:    1024,
+			contentType: "text/plain",
+			fileData:    "test content",
+			maxSize:     10 * 1024 * 1024,
+			setupMock: func(repo *MockFileRepository, storage *MockStorageClient) {
+				repo.createFunc = func(ctx context.Context, file *File) error {
+					return errors.New("database error")
+				}
+			},
+			wantErr:     true,
+			errContains: "failed to create file record",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			repo := newMockRepository()
-			s3Client := newMockS3Client()
-			service := NewService(repo, s3Client, tt.maxSize)
+			repo := newMockFileRepository()
+			storage := newMockStorageClient()
+			if tt.setupMock != nil {
+				tt.setupMock(repo, storage)
+			}
+			service := NewService(repo, storage, tt.maxSize)
 
-			fileReader := bytes.NewReader(tt.fileData)
 			file, err := service.UploadFile(
 				context.Background(),
 				tt.uploaderID,
 				tt.fileName,
 				tt.fileSize,
 				tt.contentType,
-				fileReader,
+				strings.NewReader(tt.fileData),
 			)
 
 			if tt.wantErr {
 				assert.Error(t, err)
-				if tt.errMsg != "" {
-					assert.Contains(t, err.Error(), tt.errMsg)
+				if tt.errContains != "" {
+					assert.Contains(t, err.Error(), tt.errContains)
 				}
 				assert.Nil(t, file)
 			} else {
@@ -216,22 +237,22 @@ func TestService_UploadFile(t *testing.T) {
 }
 
 func TestService_GetFile(t *testing.T) {
-	repo := newMockRepository()
-	s3Client := newMockS3Client()
-	service := NewService(repo, s3Client, 524288000)
+	repo := newMockFileRepository()
+	storage := newMockStorageClient()
+	service := NewService(repo, storage, 10*1024*1024)
 
-	// Setup: Create a file
+	// Setup: Create a test file
 	testFile := &File{
-		FileID:      "test-file-id",
+		FileID:      "file-123",
 		UploaderID:  100,
-		FileName:    "test.jpg",
+		FileName:    "test.txt",
 		FileSize:    1024,
-		ContentType: "image/jpeg",
-		StorageKey:  "uploads/2024/01/01/test.jpg",
+		ContentType: "text/plain",
+		StorageKey:  "uploads/2024/01/01/file-123.txt",
 		Status:      "active",
 		CreatedAt:   time.Now(),
 	}
-	repo.files[testFile.FileID] = testFile
+	repo.files["file-123"] = testFile
 
 	tests := []struct {
 		name    string
@@ -240,12 +261,12 @@ func TestService_GetFile(t *testing.T) {
 	}{
 		{
 			name:    "file found",
-			fileID:  "test-file-id",
+			fileID:  "file-123",
 			wantErr: false,
 		},
 		{
 			name:    "file not found",
-			fileID:  "non-existent",
+			fileID:  "nonexistent",
 			wantErr: true,
 		},
 	}
@@ -267,102 +288,179 @@ func TestService_GetFile(t *testing.T) {
 }
 
 func TestService_DownloadFile(t *testing.T) {
-	repo := newMockRepository()
-	s3Client := newMockS3Client()
-	service := NewService(repo, s3Client, 524288000)
-
-	// Setup: Create file and upload to S3
-	storageKey := "uploads/2024/01/01/test.jpg"
-	testData := []byte("test file content")
-	s3Client.storage[storageKey] = testData
-
-	testFile := &File{
-		FileID:      "test-file-id",
-		UploaderID:  100,
-		FileName:    "test.jpg",
-		FileSize:    int64(len(testData)),
-		ContentType: "image/jpeg",
-		StorageKey:  storageKey,
-		Status:      "active",
-	}
-	repo.files[testFile.FileID] = testFile
-
-	body, file, err := service.DownloadFile(context.Background(), "test-file-id")
-
-	require.NoError(t, err)
-	assert.NotNil(t, body)
-	assert.NotNil(t, file)
-	assert.Equal(t, "test-file-id", file.FileID)
-
-	// Read and verify content
-	content, err := io.ReadAll(body)
-	require.NoError(t, err)
-	assert.Equal(t, testData, content)
-
-	body.Close()
-}
-
-func TestService_GetDownloadURL(t *testing.T) {
-	repo := newMockRepository()
-	s3Client := newMockS3Client()
-	service := NewService(repo, s3Client, 524288000)
-
-	// Setup: Create file
-	testFile := &File{
-		FileID:      "test-file-id",
-		UploaderID:  100,
-		FileName:    "test.jpg",
-		StorageKey:  "uploads/2024/01/01/test.jpg",
-		Status:      "active",
-	}
-	repo.files[testFile.FileID] = testFile
-
-	url, err := service.GetDownloadURL(context.Background(), "test-file-id")
-
-	require.NoError(t, err)
-	assert.NotEmpty(t, url)
-	assert.Contains(t, url, "s3.example.com")
-}
-
-func TestService_DeleteFile(t *testing.T) {
 	tests := []struct {
-		name       string
-		fileID     string
-		userID     int64
-		setupFile  *File
-		wantErr    bool
-		errMsg     string
+		name        string
+		fileID      string
+		setupData   func(*MockFileRepository, *MockStorageClient)
+		wantErr     bool
+		errContains string
 	}{
 		{
-			name:   "successful delete by uploader",
-			fileID: "file-1",
-			userID: 100,
-			setupFile: &File{
-				FileID:      "file-1",
-				UploaderID:  100,
-				FileName:    "test.jpg",
-				StorageKey:  "uploads/test.jpg",
-				Status:      "active",
+			name:   "successful download",
+			fileID: "file-123",
+			setupData: func(repo *MockFileRepository, storage *MockStorageClient) {
+				file := &File{
+					FileID:      "file-123",
+					UploaderID:  100,
+					FileName:    "test.txt",
+					FileSize:    1024,
+					ContentType: "text/plain",
+					StorageKey:  "uploads/2024/01/01/file-123.txt",
+					Status:      "active",
+				}
+				repo.files["file-123"] = file
+				storage.storage["uploads/2024/01/01/file-123.txt"] = []byte("test file content")
 			},
 			wantErr: false,
 		},
 		{
-			name:   "delete permission denied",
-			fileID: "file-2",
-			userID: 200,
-			setupFile: &File{
-				FileID:      "file-2",
-				UploaderID:  100,
-				FileName:    "test.jpg",
-				StorageKey:  "uploads/test.jpg",
-				Status:      "active",
-			},
+			name:    "file not found in database",
+			fileID:  "nonexistent",
 			wantErr: true,
-			errMsg:  "permission denied",
+		},
+		{
+			name:   "file not found in storage",
+			fileID: "file-456",
+			setupData: func(repo *MockFileRepository, storage *MockStorageClient) {
+				file := &File{
+					FileID:     "file-456",
+					StorageKey: "uploads/missing.txt",
+				}
+				repo.files["file-456"] = file
+				// Don't add to storage
+			},
+			wantErr:     true,
+			errContains: "failed to download from storage",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := newMockFileRepository()
+			storage := newMockStorageClient()
+			if tt.setupData != nil {
+				tt.setupData(repo, storage)
+			}
+			service := NewService(repo, storage, 10*1024*1024)
+
+			body, file, err := service.DownloadFile(context.Background(), tt.fileID)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.errContains != "" {
+					assert.Contains(t, err.Error(), tt.errContains)
+				}
+				assert.Nil(t, body)
+				assert.Nil(t, file)
+			} else {
+				require.NoError(t, err)
+				assert.NotNil(t, body)
+				assert.NotNil(t, file)
+				defer body.Close()
+
+				// Verify file content
+				data, err := io.ReadAll(body)
+				require.NoError(t, err)
+				assert.Equal(t, "test file content", string(data))
+			}
+		})
+	}
+}
+
+func TestService_GetDownloadURL(t *testing.T) {
+	tests := []struct {
+		name      string
+		fileID    string
+		setupData func(*MockFileRepository, *MockStorageClient)
+		wantErr   bool
+	}{
+		{
+			name:   "successful URL generation",
+			fileID: "file-123",
+			setupData: func(repo *MockFileRepository, storage *MockStorageClient) {
+				file := &File{
+					FileID:     "file-123",
+					StorageKey: "uploads/2024/01/01/file-123.txt",
+				}
+				repo.files["file-123"] = file
+				storage.storage["uploads/2024/01/01/file-123.txt"] = []byte("test")
+			},
+			wantErr: false,
 		},
 		{
 			name:    "file not found",
-			fileID:  "non-existent",
+			fileID:  "nonexistent",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := newMockFileRepository()
+			storage := newMockStorageClient()
+			if tt.setupData != nil {
+				tt.setupData(repo, storage)
+			}
+			service := NewService(repo, storage, 10*1024*1024)
+
+			url, err := service.GetDownloadURL(context.Background(), tt.fileID)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Empty(t, url)
+			} else {
+				require.NoError(t, err)
+				assert.NotEmpty(t, url)
+				assert.Contains(t, url, "presigned")
+			}
+		})
+	}
+}
+
+func TestService_DeleteFile(t *testing.T) {
+	tests := []struct {
+		name        string
+		fileID      string
+		userID      int64
+		setupData   func(*MockFileRepository, *MockStorageClient)
+		wantErr     bool
+		errContains string
+	}{
+		{
+			name:   "successful deletion",
+			fileID: "file-123",
+			userID: 100,
+			setupData: func(repo *MockFileRepository, storage *MockStorageClient) {
+				file := &File{
+					FileID:     "file-123",
+					UploaderID: 100,
+					StorageKey: "uploads/2024/01/01/file-123.txt",
+					Status:     "active",
+				}
+				repo.files["file-123"] = file
+				storage.storage["uploads/2024/01/01/file-123.txt"] = []byte("test")
+			},
+			wantErr: false,
+		},
+		{
+			name:   "permission denied - different user",
+			fileID: "file-123",
+			userID: 200,
+			setupData: func(repo *MockFileRepository, storage *MockStorageClient) {
+				file := &File{
+					FileID:     "file-123",
+					UploaderID: 100,
+					StorageKey: "uploads/2024/01/01/file-123.txt",
+					Status:     "active",
+				}
+				repo.files["file-123"] = file
+			},
+			wantErr:     true,
+			errContains: "permission denied",
+		},
+		{
+			name:    "file not found",
+			fileID:  "nonexistent",
 			userID:  100,
 			wantErr: true,
 		},
@@ -370,76 +468,68 @@ func TestService_DeleteFile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			repo := newMockRepository()
-			s3Client := newMockS3Client()
-			service := NewService(repo, s3Client, 524288000)
-
-			if tt.setupFile != nil {
-				repo.files[tt.setupFile.FileID] = tt.setupFile
-				s3Client.storage[tt.setupFile.StorageKey] = []byte("test data")
+			repo := newMockFileRepository()
+			storage := newMockStorageClient()
+			if tt.setupData != nil {
+				tt.setupData(repo, storage)
 			}
+			service := NewService(repo, storage, 10*1024*1024)
 
 			err := service.DeleteFile(context.Background(), tt.fileID, tt.userID)
 
 			if tt.wantErr {
 				assert.Error(t, err)
-				if tt.errMsg != "" {
-					assert.Contains(t, err.Error(), tt.errMsg)
+				if tt.errContains != "" {
+					assert.Contains(t, err.Error(), tt.errContains)
 				}
 			} else {
 				assert.NoError(t, err)
-				// Verify file was deleted from repository
-				_, exists := repo.files[tt.fileID]
-				assert.False(t, exists)
+				// Verify file was soft-deleted
+				file, _ := repo.GetByFileID(context.Background(), tt.fileID)
+				assert.Equal(t, "deleted", file.Status)
 			}
 		})
 	}
 }
 
 func TestService_ListUserFiles(t *testing.T) {
-	repo := newMockRepository()
-	s3Client := newMockS3Client()
-	service := NewService(repo, s3Client, 524288000)
+	repo := newMockFileRepository()
+	storage := newMockStorageClient()
+	service := NewService(repo, storage, 10*1024*1024)
 
-	// Setup: Create multiple files for different users
-	files := []*File{
-		{FileID: "file-1", UploaderID: 100, FileName: "file1.jpg"},
-		{FileID: "file-2", UploaderID: 100, FileName: "file2.jpg"},
-		{FileID: "file-3", UploaderID: 200, FileName: "file3.jpg"},
-		{FileID: "file-4", UploaderID: 100, FileName: "file4.jpg"},
-	}
-
-	for _, file := range files {
-		repo.files[file.FileID] = file
-	}
+	// Setup: Create multiple files
+	repo.files["file-1"] = &File{FileID: "file-1", UploaderID: 100, Status: "active"}
+	repo.files["file-2"] = &File{FileID: "file-2", UploaderID: 100, Status: "active"}
+	repo.files["file-3"] = &File{FileID: "file-3", UploaderID: 200, Status: "active"}
+	repo.files["file-4"] = &File{FileID: "file-4", UploaderID: 100, Status: "deleted"}
 
 	tests := []struct {
-		name          string
-		userID        int64
-		limit         int32
-		offset        int32
-		expectedCount int
+		name        string
+		userID      int64
+		limit       int32
+		offset      int32
+		expectCount int
 	}{
 		{
-			name:          "get user 100 files",
-			userID:        100,
-			limit:         10,
-			offset:        0,
-			expectedCount: 3,
+			name:        "list user 100 files",
+			userID:      100,
+			limit:       10,
+			offset:      0,
+			expectCount: 2,
 		},
 		{
-			name:          "get user 200 files",
-			userID:        200,
-			limit:         10,
-			offset:        0,
-			expectedCount: 1,
+			name:        "list user 200 files",
+			userID:      200,
+			limit:       10,
+			offset:      0,
+			expectCount: 1,
 		},
 		{
-			name:          "user with no files",
-			userID:        300,
-			limit:         10,
-			offset:        0,
-			expectedCount: 0,
+			name:        "list user with no files",
+			userID:      999,
+			limit:       10,
+			offset:      0,
+			expectCount: 0,
 		},
 	}
 
@@ -448,62 +538,7 @@ func TestService_ListUserFiles(t *testing.T) {
 			files, err := service.ListUserFiles(context.Background(), tt.userID, tt.limit, tt.offset)
 
 			require.NoError(t, err)
-			assert.Len(t, files, tt.expectedCount)
-
-			// Verify all files belong to the user
-			for _, file := range files {
-				assert.Equal(t, tt.userID, file.UploaderID)
-			}
+			assert.Len(t, files, tt.expectCount)
 		})
 	}
-}
-
-func TestService_UploadFile_S3Failure(t *testing.T) {
-	repo := newMockRepository()
-	s3Client := newMockS3Client()
-	service := NewService(repo, s3Client, 524288000)
-
-	// Mock S3 upload failure
-	s3Client.uploadFunc = func(ctx context.Context, key string, body io.Reader, contentType string) error {
-		return errors.New("S3 upload failed")
-	}
-
-	fileReader := bytes.NewReader([]byte("test data"))
-	file, err := service.UploadFile(
-		context.Background(),
-		100,
-		"test.jpg",
-		100,
-		"image/jpeg",
-		fileReader,
-	)
-
-	assert.Error(t, err)
-	assert.Nil(t, file)
-	assert.Contains(t, err.Error(), "failed to upload to S3")
-}
-
-func TestService_UploadFile_DatabaseFailure(t *testing.T) {
-	repo := newMockRepository()
-	s3Client := newMockS3Client()
-	service := NewService(repo, s3Client, 524288000)
-
-	// Mock database create failure
-	repo.createFunc = func(ctx context.Context, file *File) error {
-		return errors.New("database error")
-	}
-
-	fileReader := bytes.NewReader([]byte("test data"))
-	file, err := service.UploadFile(
-		context.Background(),
-		100,
-		"test.jpg",
-		100,
-		"image/jpeg",
-		fileReader,
-	)
-
-	assert.Error(t, err)
-	assert.Nil(t, file)
-	assert.Contains(t, err.Error(), "failed to create file record")
 }

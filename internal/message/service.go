@@ -11,11 +11,11 @@ import (
 )
 
 type Service struct {
-	repo         *Repository
+	repo         MessageRepository
 	routerClient RouterClient
 }
 
-func NewService(repo *Repository, routerClient RouterClient) *Service {
+func NewService(repo MessageRepository, routerClient RouterClient) *Service {
 	return &Service{
 		repo:         repo,
 		routerClient: routerClient,
